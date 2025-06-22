@@ -24,4 +24,8 @@ def create_app():
     from app.routes.lesson_routes import lesson_bp
     app.register_blueprint(lesson_bp, url_prefix='/api')
 
+    #수업신청
+    from app.routes.apply_routes import apply_bp
+    app.register_blueprint(apply_bp, url_prefix='/api')
+
     return app

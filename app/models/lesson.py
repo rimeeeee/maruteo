@@ -1,3 +1,4 @@
+#수업테이블정의
 from app import db
 
 class Lesson(db.Model):
@@ -6,6 +7,8 @@ class Lesson(db.Model):
     description = db.Column(db.Text)
     location = db.Column(db.String(100))
     date = db.Column(db.String(50))  # 날짜는 문자열로 우선 처리
+    
+    #instructor_id는 User 테이블의 ID와 연결
     instructor_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # 강사 (청년)
 
     def to_dict(self):

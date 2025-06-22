@@ -21,6 +21,6 @@ def login():
     data = request.get_json()
     user = User.query.filter_by(email=data['email']).first()
     if user and check_password_hash(user.password, data['password']):
-        token = create_access_token(identity={'id': user.id, 'role': user.role})
+        token = create_access_token(identity=str(user.id))
         return jsonify(token=token)
     return jsonify(message='로그인 실패'), 401

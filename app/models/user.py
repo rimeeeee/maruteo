@@ -1,3 +1,4 @@
+# User테이블 정의
 from app import db
 
 class User(db.Model):

@@ -5,6 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 lesson_bp = Blueprint('lesson', __name__)
 
+#수업 등록록
 @lesson_bp.route('/lesson', methods=['POST'])
 @jwt_required()
 def create_lesson():
@@ -16,7 +17,7 @@ def create_lesson():
         description=data['description'],
         location=data['location'],
         date=data['date'],
-        instructor_id=current_user['id']
+        instructor_id=int(get_jwt_identity())
     )
 
     db.session.add(lesson)
@@ -24,7 +25,10 @@ def create_lesson():
 
     return jsonify(message='수업 등록 완료'), 201
 
+
+#수업 목록 조회
 @lesson_bp.route('/lesson', methods=['GET'])
 def get_lessons():
     lessons = Lesson.query.all()
     return jsonify([lesson.to_dict() for lesson in lessons])
+
