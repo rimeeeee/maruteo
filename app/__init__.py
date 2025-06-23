@@ -28,4 +28,8 @@ def create_app():
     from app.routes.apply_routes import apply_bp
     app.register_blueprint(apply_bp, url_prefix='/api')
 
+    #프로필 등록/수정
+    from app.routes.profile_routes import profile_bp
+    app.register_blueprint(profile_bp, url_prefix='/api')
+
     return app
