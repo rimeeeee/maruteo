@@ -10,8 +10,26 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
+
+    # 비밀번호 확인 검사
+    if data['password'] != data['password_check']:
+        return jsonify(message='비밀번호가 일치하지 않습니다'), 400
+    
+    # 중복 이메일 검사
+    if User.query.filter_by(email=data['email']).first():
+        return jsonify(message='이미 등록된 이메일입니다'), 409
+
     hashed_pw = generate_password_hash(data['password'])
-    user = User(name=data['name'], email=data['email'], password=hashed_pw, role=data['role'])
+
+    user = User(
+        role=data['role'],
+        name=data['name'],
+        email=data['email'],
+        phone=data['phone'],
+        birth=data['birth'],
+        password=hashed_pw
+    )
+    
     db.session.add(user)
     db.session.commit()
     return jsonify(message='가입 성공'), 201
