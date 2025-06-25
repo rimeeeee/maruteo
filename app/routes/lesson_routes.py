@@ -1,34 +1,82 @@
 from flask import Blueprint, request, jsonify
 from app import db
 from app.models.lesson import Lesson
+from app.models.user import User
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 lesson_bp = Blueprint('lesson', __name__)
 
-#수업 등록록
+#수업 등록
+# @lesson_bp.route('/lesson', methods=['POST'])
+# @jwt_required()
+# def create_lesson():
+#     current_user = get_jwt_identity()
+#     data = request.get_json()
+
+#     lesson = Lesson(
+#         title=data['title'],
+#         description=data['description'],
+#         location=data['location'],
+#         date=data['date'],
+#         instructor_id=int(get_jwt_identity())
+#     )
+
+#     db.session.add(lesson)
+#     db.session.commit()
+
+#     return jsonify(message='수업 등록 완료'), 201
+
+
+
+#수업등록
 @lesson_bp.route('/lesson', methods=['POST'])
 @jwt_required()
 def create_lesson():
-    current_user = get_jwt_identity()
     data = request.get_json()
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+
+    if not user:
+        return jsonify({'msg': 'User not found'}), 404
 
     lesson = Lesson(
-        title=data['title'],
-        description=data['description'],
-        location=data['location'],
-        date=data['date'],
-        instructor_id=int(get_jwt_identity())
+        title=data.get('title'),
+        description=data.get('description'),
+        location=data.get('location'),
+        time=data.get('time'),
+        unavailable=data.get('unavailable', []),
+        media_url=data.get('media_url'),
+        instructor_id=user.id
     )
 
     db.session.add(lesson)
     db.session.commit()
 
-    return jsonify(message='수업 등록 완료'), 201
+    return jsonify({'msg': 'Lesson created successfully'}), 201
 
+# #수업 목록 조회
+# @lesson_bp.route('/lesson', methods=['GET'])
+# def get_lessons():
+#     lessons = Lesson.query.all()
+#     return jsonify([lesson.to_dict() for lesson in lessons])
 
-#수업 목록 조회
+# 수업 목록 조회 (내가 등록한 수업만 보기)
 @lesson_bp.route('/lesson', methods=['GET'])
+@jwt_required()
 def get_lessons():
-    lessons = Lesson.query.all()
-    return jsonify([lesson.to_dict() for lesson in lessons])
+    user_id = get_jwt_identity()
+    lessons = Lesson.query.filter_by(instructor_id=user_id).all()
 
+    lesson_list = []
+    for lesson in lessons:
+        lesson_list.append({
+            'id': lesson.id,
+            'title': lesson.title,
+            'description': lesson.description,
+            'location': lesson.location,
+            'time': lesson.time,
+            'unavailable': lesson.unavailable,
+            'media_url': lesson.media_url
+        })
+
+    return jsonify(lesson_list), 200
