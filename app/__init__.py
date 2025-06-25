@@ -1,9 +1,10 @@
 # flask 앱 생성, 라우터 등록
 from flask import Flask
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from app.config import Config
-from flask_cors import CORS
+
 
 
 db = SQLAlchemy()
@@ -14,8 +15,8 @@ def create_app():
     app.config.from_object(Config)
 
     # CORS 허용 설정
-    CORS(app, resources={r"/*": {"origins": "*"}})  # 전체 허용
-
+    CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
+    
     db.init_app(app)
     jwt.init_app(app)
 

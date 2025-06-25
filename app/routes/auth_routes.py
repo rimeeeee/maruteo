@@ -5,6 +5,8 @@ from app.models.user import User, Talent
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token
 
+from flask_cors import cross_origin
+
 auth_bp = Blueprint('auth', __name__)  
 
 # 회원가입 API
@@ -65,7 +67,12 @@ def register():
 
 # 로그인 API
 @auth_bp.route('/login', methods=['POST'])
+
 def login():
+
+    if request.method == 'OPTIONS':
+        return '', 204  # Preflight 응답
+    
     data = request.get_json()
     user = User.query.filter_by(email=data['email']).first()
 
