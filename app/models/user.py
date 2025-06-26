@@ -1,5 +1,6 @@
 # User테이블 정의
 from app import db
+from datetime import datetime
 
 # 보유 재능
 user_have_talents = db.Table('user_have_talents',
@@ -14,6 +15,7 @@ user_want_talents = db.Table('user_want_talents',
 )
 
 class User(db.Model):
+
     id = db.Column(db.Integer, primary_key=True)
     role = db.Column(db.String(20))       # '청년', '어르신'
     name = db.Column(db.String(50))
@@ -21,7 +23,8 @@ class User(db.Model):
     phone = db.Column(db.String(20))
     birth = db.Column(db.String(20))      # 'YYYY-MM-DD' 형식
     password = db.Column(db.String(255), nullable=False)
-
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     #프로필 필드
     gender = db.Column(db.String(10), nullable=True)
     address = db.Column(db.String(100), nullable=True)
@@ -30,7 +33,7 @@ class User(db.Model):
     profile_image = db.Column(db.String(200), nullable=True)  # 이미지 경로
     have_talents = db.relationship('Talent', secondary=user_have_talents, backref='owners')
     want_talents = db.relationship('Talent', secondary=user_want_talents, backref='learners')
-
+    
 
 class Talent(db.Model):
     id = db.Column(db.Integer, primary_key=True)

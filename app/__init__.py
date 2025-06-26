@@ -36,4 +36,7 @@ def create_app():
     from app.routes.profile_routes import profile_bp
     app.register_blueprint(profile_bp, url_prefix='/api')
 
+    #출석/이행률 계산 API
+    from app.routes.mypage_routes import mypage_bp
+    app.register_blueprint(mypage_bp, url_prefix='/api')
     return app
