@@ -1,6 +1,6 @@
 #회원가입/로그인 API
 from flask import Blueprint, request, jsonify
-from app import db
+from app.database import db
 from app.models.user import User, Talent
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token

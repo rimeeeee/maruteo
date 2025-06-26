@@ -21,7 +21,7 @@
 #             "instructor_id": self.instructor_id
 #         }
 
-from app import db
+from app.database import db
 
 class Lesson(db.Model):
     id = db.Column(db.Integer, primary_key=True)

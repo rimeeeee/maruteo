@@ -1,5 +1,5 @@
 # User테이블 정의
-from app import db
+from app.database import db
 from datetime import datetime
 
 # 보유 재능

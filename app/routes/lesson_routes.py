@@ -80,3 +80,19 @@ def get_lessons():
         })
 
     return jsonify(lesson_list), 200
+
+
+# 내 수업 삭제
+@lesson_bp.route('/lesson/<int:lesson_id>', methods=['DELETE'])
+@jwt_required()
+def delete_lesson(lesson_id):
+    user_id = get_jwt_identity()
+    lesson = Lesson.query.filter_by(id=lesson_id, instructor_id=user_id).first()
+
+    if not lesson:
+        return jsonify({'msg': '수업을 찾을 수 없거나 삭제 권한이 없습니다'}), 404
+
+    db.session.delete(lesson)
+    db.session.commit()
+
+    return jsonify({'msg': '수업이 삭제되었습니다'}), 200
