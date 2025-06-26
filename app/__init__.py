@@ -27,6 +27,9 @@ def create_app():
     from app.routes.auth_routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api')
     
+    from app.routes.test_routes import test_bp
+    app.register_blueprint(test_bp)
+    
     #수업등록
     from app.routes.lesson_routes import lesson_bp
     app.register_blueprint(lesson_bp, url_prefix='/api')
