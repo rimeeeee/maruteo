@@ -251,7 +251,6 @@ cleanup_thread = threading.Thread(target=cleanup_sessions, daemon=True)
 cleanup_thread.start()
 
 if __name__ == '__main__':
-<<<<<<< HEAD
     port = int(os.getenv('PORT', 3001))
     debug_mode = os.getenv('NODE_ENV') == 'development'
     
@@ -271,7 +270,3 @@ if __name__ == '__main__':
         debug=debug_mode,
         threaded=True
     )
-=======
-    port = int(os.environ.get('PORT', 5000))  
-    app.run(debug=True, host='0.0.0.0', port=port)
->>>>>>> master
