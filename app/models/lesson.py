@@ -23,6 +23,12 @@
 
 from app.database import db
 
+# 찜한 수업 테이블
+wishlist = db.Table('wishlist',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('lesson_id', db.Integer, db.ForeignKey('lesson.id'))
+)
+
 class Lesson(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
@@ -31,9 +37,69 @@ class Lesson(db.Model):
     time = db.Column(db.String(100), nullable=True)
     unavailable = db.Column(db.PickleType, nullable=True)  # 문자열 배열 저장
     media_url = db.Column(db.String(500), nullable=True)
-    categori_high = db.Column(db.String(100))
-    categori_middle = db.Column(db.String(100))
+    
+    # 새로운 분류 시스템
+    sub_category_id = db.Column(db.String(50), db.ForeignKey('sub_category.sub_category_id'), nullable=True)
+    
+    # 클라우디너리 이미지 URL
+    image_url = db.Column(db.String(500), nullable=True)
 
     # 등록한 유저 정보 (청년)
     instructor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     instructor = db.relationship('User', backref='lessons')
+    
+    # 찜한 사용자들
+    wished_by = db.relationship('User', secondary=wishlist, backref='wished_lessons')
+    
+    # 리뷰 관계
+    reviews = db.relationship('Review', backref='lesson_ref', lazy=True)
+    
+    def __init__(self, title=None, description=None, location=None, time=None, sub_category_id=None, instructor_id=None, image_url=None, **kwargs):
+        self.title = title
+        self.description = description
+        self.location = location
+        self.time = time
+        self.sub_category_id = sub_category_id
+        self.instructor_id = instructor_id
+        self.image_url = image_url
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+    
+    def to_dict(self):
+        # 분류 정보 안전하게 가져오기 (직접 쿼리)
+        sub_category_name = None
+        category_id = None
+        category_name = None
+        
+        if self.sub_category_id:
+            from app.models.category import SubCategory
+            sub_category = SubCategory.query.filter_by(sub_category_id=self.sub_category_id).first()
+            if sub_category:
+                sub_category_name = sub_category.name
+                if sub_category.category:
+                    category_id = sub_category.category_id
+                    category_name = sub_category.category.name
+        
+        # 평균 별점 계산
+        avg_rating = 0
+        review_count = 0
+        # reviews는 실제 쿼리에서 계산하므로 여기서는 기본값 사용
+        
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "location": self.location,
+            "time": self.time,
+            "media_url": self.media_url,
+            "image_url": self.image_url,  # 클라우디너리 이미지 URL
+            "sub_category_id": self.sub_category_id,
+            "sub_category_name": sub_category_name,
+            "category_id": category_id,
+            "category_name": category_name,
+            "instructor_id": self.instructor_id,
+            "instructor_name": self.instructor.name if self.instructor else None,
+            "wish_count": 0,  # 임시로 0으로 설정, 실제로는 쿼리에서 계산
+            "avg_rating": avg_rating,
+            "review_count": review_count
+        }
