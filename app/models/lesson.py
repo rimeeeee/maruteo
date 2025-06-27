@@ -22,6 +22,7 @@
 #         }
 
 from app.database import db
+from datetime import datetime
 
 # 찜한 수업 테이블
 wishlist = db.Table('wishlist',
@@ -43,6 +44,9 @@ class Lesson(db.Model):
     
     # 클라우디너리 이미지 URL
     image_url = db.Column(db.String(500), nullable=True)
+    
+    # 생성일
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # 등록한 유저 정보 (청년)
     instructor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -101,5 +105,6 @@ class Lesson(db.Model):
             "instructor_name": self.instructor.name if self.instructor else None,
             "wish_count": 0,  # 임시로 0으로 설정, 실제로는 쿼리에서 계산
             "avg_rating": avg_rating,
-            "review_count": review_count
+            "review_count": review_count,
+            "created_at": self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else None
         }
