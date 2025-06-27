@@ -45,4 +45,9 @@ def create_app():
     #출석/이행률 계산 API
     from app.routes.mypage_routes import mypage_bp
     app.register_blueprint(mypage_bp, url_prefix='/api')
+    
+    # Gemini AI 채팅 API
+    from app.routes.gemini_routes import gemini_bp
+    app.register_blueprint(gemini_bp, url_prefix='/api')
+    
     return app
