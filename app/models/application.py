@@ -1,6 +1,6 @@
 #수업 신청 모델
-
-from app import db
+from app.database import db
+#from app import db
 from datetime import datetime
 
 class Application(db.Model):
