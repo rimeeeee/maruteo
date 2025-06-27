@@ -82,6 +82,78 @@ GET /api/lessons/by-category/{category_id}
 GET /api/lessons/by-subcategory/{sub_category_id}
 ```
 
+#### 수업 상세 정보 조회
+**GET** `/api/lessons/{lesson_id}/detail`
+
+수업의 상세 정보를 조회합니다.
+
+**응답 예시:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "title": "김치찌개 만들기",
+    "description": "맛있는 김치찌개를 만드는 방법을 배워봅시다...",
+    "location": "서울시 강남구",
+    "time": "오후 2시-4시",
+    "image_url": "https://example.com/kimchi.jpg",
+    "video_url": "https://example.com/kimchi-video.mp4",
+    "materials": ["김치", "돼지고기", "두부", "양파", "대파", "고춧가루", "간장", "참기름"],
+    "instructor": {
+      "id": 1,
+      "name": "김요리",
+      "profile_image": "https://example.com/profile.jpg",
+      "bio": "요리 전문가입니다",
+      "role": "youth"
+    },
+    "category": {
+      "name": "요리",
+      "sub_category_name": "한식"
+    },
+    "stats": {
+      "application_count": 5,
+      "wish_count": 12,
+      "avg_rating": 4.5,
+      "review_count": 8
+    },
+    "user_info": {
+      "is_wished": false,
+      "can_apply": true
+    },
+    "created_at": "2024-01-15 14:30"
+  }
+}
+```
+
+#### 수업 찜하기/찜해제
+**POST** `/api/lessons/{lesson_id}/wish`
+
+수업을 찜하거나 찜해제합니다.
+
+**응답 예시:**
+```json
+{
+  "success": true,
+  "action": "added",
+  "wish_count": 13,
+  "message": "찜하기가 added되었습니다."
+}
+```
+
+#### 수업 신청
+**POST** `/api/lessons/{lesson_id}/apply`
+
+수업에 신청합니다.
+
+**응답 예시:**
+```json
+{
+  "success": true,
+  "message": "수업 신청이 완료되었습니다."
+}
+```
+
 ### 3. 메인 대시보드 (모든 데이터 한번에)
 ```
 GET /api/main/dashboard
@@ -218,24 +290,7 @@ GET /api/main/popular-instructors
 
 **설명:** 신청수가 많은 순으로 정렬된 인기 강사들을 반환합니다.
 
-### 7. 수업 찜하기/찜해제
-```
-POST /api/lesson/{lesson_id}/wish
-```
-
-**설명:** 특정 수업을 찜하거나 찜해제합니다.
-**인증:** 로그인 필요
-
-**응답 예시:**
-```json
-{
-  "success": true,
-  "action": "added",
-  "message": "찜하기가 added되었습니다."
-}
-```
-
-### 8. 리뷰 관련 API
+### 7. 리뷰 관련 API
 
 #### 수업 리뷰 목록 가져오기
 ```

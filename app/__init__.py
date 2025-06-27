@@ -1,38 +1,30 @@
 # flask 앱 생성, 라우터 등록
 from flask import Flask
 from flask_cors import CORS
-#from flask_sqlalchemy import SQLAlchemy
 from app.database import db
 from flask_jwt_extended import JWTManager
 from flask_login import LoginManager
 from app.config import Config
 
-
-
-#db = SQLAlchemy()
 jwt = JWTManager()
 login_manager = LoginManager()
 
 def create_app():
     app = Flask(__name__)
-    #app.config.from_object(Config)
     app.config.from_object('app.config.Config')
 
     # CORS 허용 설정
-    #CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
-    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
-    
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
+
     db.init_app(app)
     jwt.init_app(app)
     login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'  # type: ignore
+
+    login_manager.login_view = 'auth.login'
 
     # 라우터 등록 (지금은 auth만)
     from app.routes.auth_routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api')
-    
-    from app.routes.test_routes import test_bp
-    app.register_blueprint(test_bp)
     
     #수업등록
     from app.routes.lesson_routes import lesson_bp
@@ -61,6 +53,10 @@ def create_app():
     #리뷰
     from app.routes.review_routes import review_bp
     app.register_blueprint(review_bp, url_prefix='/api')
+    
+    #데이터베이스 관련 블루프린트
+    from app.routes.db_routes import db_bp
+    app.register_blueprint(db_bp, url_prefix='/api')
     
     return app
 

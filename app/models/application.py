@@ -10,6 +10,13 @@ class Application(db.Model):
     status = db.Column(db.String(20), default='신청됨')  # 추후 승인 구조로 확장 가능
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    def __init__(self, lesson_id=None, user_id=None, status=None, **kwargs):
+        self.lesson_id = lesson_id
+        self.user_id = user_id
+        self.status = status
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
     def to_dict(self):
         return {
             "id": self.id,
