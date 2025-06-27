@@ -194,6 +194,107 @@ def get_instructors_by_subcategory(sub_category_id):
             'message': str(e)
         }), 500
 
+@category_bp.route('/talent-exploration/<sub_category_id>/lessons', methods=['GET'])
+def get_lessons_by_subcategory(sub_category_id):
+    """특정 소분류의 수업 리스트를 가져옴 (재능탐색 페이지)"""
+    try:
+        # 쿼리 파라미터 가져오기
+        sort_by = request.args.get('sort', 'latest')  # latest, popular, wish_count, rating
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 12))
+        
+        # 현재 로그인한 사용자의 역할 확인
+        user_role = None
+        if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+            user_role = current_user.role
+        
+        # 해당 소분류의 수업들을 가져옴
+        lessons_query = Lesson.query.filter_by(sub_category_id=sub_category_id)
+        
+        # 역할에 따른 필터링
+        if user_role == 'student':  # 청년이 로그인한 경우
+            # 어르신이 만든 수업만 보여줌
+            lessons_query = lessons_query.join(User).filter(User.role == 'instructor')
+        elif user_role == 'instructor':  # 어르신이 로그인한 경우
+            # 청년이 만든 수업만 보여줌
+            lessons_query = lessons_query.join(User).filter(User.role == 'student')
+        
+        lessons = lessons_query.all()
+        
+        # 수업별 상세 정보 계산
+        lessons_data = []
+        for lesson in lessons:
+            # 강사 정보 가져오기
+            instructor = User.query.get(lesson.instructor_id)
+            
+            # 신청수 계산
+            app_count = Application.query.filter_by(lesson_id=lesson.id).count()
+            
+            # 찜수 계산
+            wish_count = len(lesson.wished_by)
+            
+            # 평균 별점 계산
+            reviews = Review.query.filter_by(lesson_id=lesson.id).all()
+            avg_rating = 0
+            review_count = 0
+            if reviews:
+                avg_rating = sum(review.rating for review in reviews) / len(reviews)
+                review_count = len(reviews)
+            
+            lesson_data = {
+                'id': lesson.id,
+                'title': lesson.title,
+                'description': lesson.description,
+                'location': lesson.location,
+                'time': lesson.time,
+                'image_url': lesson.image_url,  # 수업 사진 (클라우디너리)
+                'instructor_id': lesson.instructor_id,
+                'instructor_name': instructor.name if instructor else None,
+                'instructor_profile_image': instructor.profile_image if instructor else None,
+                'application_count': app_count,
+                'wish_count': wish_count,  # 찜수
+                'avg_rating': round(avg_rating, 1),  # 별점
+                'review_count': review_count,
+                'created_at': lesson.created_at.strftime('%Y-%m-%d %H:%M') if lesson.created_at else None
+            }
+            lessons_data.append(lesson_data)
+        
+        # 정렬
+        if sort_by == 'latest':
+            # 최신순
+            lessons_data.sort(key=lambda x: x['created_at'] or '', reverse=True)
+        elif sort_by == 'popular':
+            # 인기순 (신청수 기준)
+            lessons_data.sort(key=lambda x: x['application_count'], reverse=True)
+        elif sort_by == 'wish_count':
+            # 찜많은순
+            lessons_data.sort(key=lambda x: x['wish_count'], reverse=True)
+        elif sort_by == 'rating':
+            # 별점높은순
+            lessons_data.sort(key=lambda x: x['avg_rating'], reverse=True)
+        
+        # 페이징
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        paginated_lessons = lessons_data[start_idx:end_idx]
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'lessons': paginated_lessons,
+                'total_count': len(lessons_data),
+                'page': page,
+                'per_page': per_page,
+                'total_pages': (len(lessons_data) + per_page - 1) // per_page
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
 @category_bp.route('/talent-exploration/instructors/<int:instructor_id>/detail', methods=['GET'])
 def get_instructor_detail(instructor_id):
     """강사 상세 정보를 가져옴"""
