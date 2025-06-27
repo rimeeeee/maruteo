@@ -1,13 +1,4 @@
-<<<<<<< HEAD
-#!/usr/bin/env python3
-"""
-AI 간편 요청서 Flask 백엔드 서버
-"""
-=======
 import os
-from app import create_app
->>>>>>> master
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
