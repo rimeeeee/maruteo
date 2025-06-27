@@ -2,6 +2,7 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
+import os
 from datetime import datetime, timedelta
 import uuid
 from dotenv import load_dotenv
@@ -24,6 +25,20 @@ genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 # 인메모리 세션 저장소 (실제 서비스에서는 Redis나 DB 사용)
 sessions = {}
 
+# 루트 페이지
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({
+        'service': 'AI 간편 요청서 백엔드',
+        'status': 'running',
+        'endpoints': {
+            'health': '/health',
+            'chat_sessions': '/api/chat/sessions',
+            'chat_messages': '/api/chat/sessions/<session_id>/messages'
+        },
+        'docs': 'API 전용 서버입니다. 프론트엔드에서 접속하세요.'
+    })
+
 # 헬스체크 엔드포인트
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -31,6 +46,11 @@ def health_check():
         'status': 'OK', 
         'message': 'AI 간편 요청서 백엔드가 실행 중입니다'
     })
+
+# 파비콘 처리
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
 
 # 새 채팅 세션 생성
 @app.route('/api/chat/sessions', methods=['POST'])
@@ -203,6 +223,25 @@ def delete_session(session_id):
     except Exception as error:
         print(f'Session delete error: {error}')
         return jsonify({'error': '세션 삭제 중 오류가 발생했습니다'}), 500
+
+# 프론트엔드 경로 처리 (SPA를 위한 catch-all)
+@app.route('/<path:path>')
+def catch_all(path):
+    # 프론트엔드 경로들 (React Router)
+    frontend_routes = ['my-talents', 'chat', 'profile', 'apply']
+    
+    if any(route in path for route in frontend_routes):
+        return jsonify({
+            'message': f'프론트엔드 경로입니다: /{path}',
+            'info': '이 경로는 프론트엔드에서 처리됩니다.',
+            'api_base': '/api/',
+            'frontend_url': 'https://your-frontend-domain.com'
+        }), 200
+    
+    return jsonify({
+        'error': f'경로를 찾을 수 없습니다: /{path}',
+        'available_routes': ['/health', '/api/chat/sessions']
+    }), 404
 
 # 에러 핸들러
 @app.errorhandler(404)
