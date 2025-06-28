@@ -4,12 +4,14 @@ from flask_cors import CORS
 from app.database import db
 from flask_jwt_extended import JWTManager
 from flask_login import LoginManager
+import os
 
 jwt = JWTManager()
 login_manager = LoginManager()
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, 
+                template_folder=os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates'))
     app.config.from_object('app.config.Config')
 
     # CORS 허용 설정 - 모든 상황에서 작동하도록 강화
@@ -63,6 +65,10 @@ def create_app():
     #데이터베이스 관련 블루프린트
     from app.routes.db_routes import db_bp
     app.register_blueprint(db_bp, url_prefix='/api/db')
+    
+    #코디네이터 대시보드
+    from app.routes.coordinator_routes import coordinator_bp
+    app.register_blueprint(coordinator_bp, url_prefix='')
     
     return app
 
