@@ -780,7 +780,7 @@ curl -X GET http://localhost:5000/api/category/talent-exploration/instructors/1/
 ### 24. 재능탐색 - 특정 강사의 수업 목록
 - **기능**: 특정 강사의 수업 목록 조회
 - **Endpoint**: `/api/category/talent-exploration/{sub_category_id}/instructors/{instructor_id}/lessons`
-- **Method**: `GET`
+- **Method**: `cc`
 - **Path Params**: 
   - `sub_category_id` (소분류 ID)
   - `instructor_id` (강사 ID)
@@ -974,7 +974,7 @@ curl -X POST http://localhost:5000/api/apply/apply \
     "lesson_id": 1,
     "status": "pending",
     "created_at": "2024-01-15T14:30:00"
-  }
+  }u
 ]
 ```
 - **예시 호출**:

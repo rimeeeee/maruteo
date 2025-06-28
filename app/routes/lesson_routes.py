@@ -403,7 +403,7 @@ def get_filtered_lessons():
     }), 200
 
 # 프론트엔드 요청에 맞는 수업 목록 조회 API
-@lesson_bp.route('/lessons', methods=['GET'], strict_slashes=False)
+@lesson_bp.route('/', methods=['GET'], strict_slashes=False)
 @jwt_required()
 def get_lessons_with_filters():
     """쿼리 파라미터를 지원하는 수업 목록 조회 API"""
