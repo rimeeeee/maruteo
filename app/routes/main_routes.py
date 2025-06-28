@@ -13,6 +13,22 @@ from app.config import Config
 
 main_bp = Blueprint('main', __name__)
 
+# 첫화면 메시지
+@main_bp.route('/', methods=['GET'])
+def home():
+    """첫화면 - 의성 해커톤 백엔드 소개"""
+    return jsonify({
+        'message': '의성 해커톤 백엔드입니다~ 🚀',
+        'description': '마루터 플랫폼 API 서버',
+        'version': '1.0.0',
+        'endpoints': {
+            'auth': '/api/login, /api/register',
+            'lessons': '/api/lessons',
+            'main': '/api/main/dashboard',
+            'categories': '/api/categories'
+        }
+    }), 200
+
 def jwt_required(f):
     """JWT 토큰 인증 데코레이터"""
     @wraps(f)

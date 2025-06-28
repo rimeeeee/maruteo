@@ -20,7 +20,7 @@ def create_app():
     jwt.init_app(app)
     login_manager.init_app(app)
 
-    login_manager.login_view = 'auth.login'
+    login_manager.login_view = 'auth.login'  # type: ignore
 
     # 라우터 등록 (지금은 auth만)
     from app.routes.auth_routes import auth_bp
@@ -44,7 +44,7 @@ def create_app():
     
     #메인페이지
     from app.routes.main_routes import main_bp
-    app.register_blueprint(main_bp, url_prefix='/api')
+    app.register_blueprint(main_bp, url_prefix='/')
     
     #카테고리
     from app.routes.category_routes import category_bp
