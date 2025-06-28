@@ -13,9 +13,9 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object('app.config.Config')
 
-    # CORS 허용 설정 - Config에서 origins 가져오기
+    # CORS 허용 설정 - 모든 origin, 모든 경로 허용
     CORS(app, 
-         origins=app.config['CORS_ORIGINS'],
+         origins="*",
          supports_credentials=True,
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
          allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
