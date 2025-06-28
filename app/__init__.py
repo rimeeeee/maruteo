@@ -4,12 +4,14 @@ from flask_cors import CORS
 #from flask_sqlalchemy import SQLAlchemy
 from app.database import db
 from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
 from app.config import Config
 
 
 
 #db = SQLAlchemy()
 jwt = JWTManager()
+migrate = Migrate()
 
 def create_app():
     app = Flask(__name__)
@@ -22,6 +24,7 @@ def create_app():
     
     db.init_app(app)
     jwt.init_app(app)
+    migrate.init_app(app, db)
 
     # 라우터 등록 (지금은 auth만)
     from app.routes.auth_routes import auth_bp
