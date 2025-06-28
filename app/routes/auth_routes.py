@@ -67,12 +67,7 @@ def register():
 
 # 로그인 API
 @auth_bp.route('/login', methods=['POST'])
-
 def login():
-
-    if request.method == 'OPTIONS':
-        return '', 204  # Preflight 응답
-    
     data = request.get_json()
     user = User.query.filter_by(email=data['email']).first()
 
