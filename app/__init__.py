@@ -12,12 +12,14 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object('app.config.Config')
 
-    # CORS 허용 설정 - 모든 origin, 모든 경로 허용
+    # CORS 허용 설정 - 더 명시적인 설정
     CORS(app, 
          origins="*",
-         supports_credentials=True,
+         supports_credentials=False,  # credentials 사용하지 않을 때는 False
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+         expose_headers=["Content-Type", "Authorization"],
+         max_age=3600)
 
     db.init_app(app)
     jwt.init_app(app)
