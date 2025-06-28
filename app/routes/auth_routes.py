@@ -85,7 +85,7 @@ def login():
         "id": str(user.id),
         "email": user.email,
         "name": user.name,
-        "userType": "elder" if user.role == "어르신" else "young",
+        "userType": "elder" if user.role == "elder" else "young",
         "phone": user.phone,
         "birthDate": user.birth
     }

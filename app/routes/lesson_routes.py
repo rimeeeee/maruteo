@@ -59,21 +59,36 @@ def create_lesson():
 
     return jsonify({'msg': 'Lesson created successfully'}), 201
 
-# #수업 목록 조회
-# @lesson_bp.route('/lesson', methods=['GET'])
-# def get_lessons():
-#     lessons = Lesson.query.all()
-#     return jsonify([lesson.to_dict() for lesson in lessons])
-
-# 수업 목록 조회 (내가 등록한 수업만 보기)
+# 수업 목록 조회 (역할에 따른 필터링)
 @lesson_bp.route('/lesson', methods=['GET'])
 @jwt_required()
 def get_lessons():
     user_id = get_jwt_identity()
-    lessons = Lesson.query.filter_by(instructor_id=user_id).all()
+    current_user = User.query.get(int(user_id))
+    
+    if not current_user:
+        return jsonify({'msg': 'User not found'}), 404
+    
+    # 사용자 역할에 따른 필터링
+    if current_user.role == 'young':  # 청년인 경우
+        # 어르신이 등록한 수업만 조회
+        lessons = Lesson.query.join(User).filter(
+            User.role == 'elder'
+        ).all()
+    elif current_user.role == 'elder':  # 어르신인 경우
+        # 청년이 등록한 수업만 조회
+        lessons = Lesson.query.join(User).filter(
+            User.role == 'young'
+        ).all()
+    else:
+        # 기본적으로 모든 수업 조회 (관리자 등)
+        lessons = Lesson.query.all()
 
     lesson_list = []
     for lesson in lessons:
+        # 강사 정보 가져오기
+        instructor = User.query.get(lesson.instructor_id)
+        
         lesson_list.append({
             'id': lesson.id,
             'title': lesson.title,
@@ -81,7 +96,9 @@ def get_lessons():
             'location': lesson.location,
             'time': lesson.time,
             'unavailable': lesson.unavailable,
-            'media_url': lesson.media_url
+            'media_url': lesson.media_url,
+            'instructor_name': instructor.name if instructor else None,
+            'instructor_role': instructor.role if instructor else None
         })
 
     return jsonify(lesson_list), 200
@@ -237,10 +254,85 @@ def toggle_lesson_wish(lesson_id):
             'message': str(e)
         }), 500
 
+@lesson_bp.route('/lessons/<int:lesson_id>/apply-form', methods=['GET'])
+def get_lesson_apply_form(lesson_id):
+    """수업 신청 폼 정보를 가져옴"""
+    try:
+        # 수업 정보 가져오기
+        lesson = Lesson.query.get_or_404(lesson_id)
+        
+        # 강사 정보 가져오기
+        instructor = User.query.get(lesson.instructor_id)
+        
+        # 분류 정보 가져오기
+        sub_category_name = None
+        category_name = None
+        if lesson.sub_category_id:
+            sub_category = SubCategory.query.filter_by(sub_category_id=lesson.sub_category_id).first()
+            if sub_category:
+                sub_category_name = sub_category.name
+                if sub_category.category:
+                    category_name = sub_category.category.name
+        
+        # 찜수 계산
+        wish_count = len(lesson.wished_by)
+        
+        # 평균 별점 계산
+        reviews = Review.query.filter_by(lesson_id=lesson.id).all()
+        avg_rating = 0
+        review_count = 0
+        if reviews:
+            avg_rating = sum(review.rating for review in reviews) / len(reviews)
+            review_count = len(reviews)
+        
+        # 신청수 계산
+        application_count = Application.query.filter_by(lesson_id=lesson.id).count()
+        
+        # 수업 신청 폼 정보 구성
+        apply_form = {
+            'lesson': {
+                'id': lesson.id,
+                'title': lesson.title,  # 2. 수업명
+                'image_url': lesson.image_url,  # 1. 수업 사진
+                'location': lesson.location,  # 6. 수업 장소(주소지)
+                'time': lesson.time,  # 수업 시간
+                'description': lesson.description,
+                'avg_rating': round(avg_rating, 1),  # 3. 별점
+                'review_count': review_count,
+                'wish_count': wish_count,  # 4. 찜수
+                'application_count': application_count,  # 7. 인원수 (신청수)
+                'unavailable': lesson.unavailable  # 안되는 요일, 시간대
+            },
+            
+            'instructor': {
+                'id': instructor.id if instructor else None,
+                'name': instructor.name if instructor else None,
+                'profile_image': instructor.profile_image if instructor else None,
+                'role': instructor.role if instructor else None
+            },
+            
+            'category': {
+                'name': category_name,
+                'sub_category_name': sub_category_name
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': apply_form
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
 @lesson_bp.route('/lessons/<int:lesson_id>/apply', methods=['POST'])
 def apply_lesson(lesson_id):
     """수업 신청"""
     try:
+        data = request.get_json()
         lesson = Lesson.query.get_or_404(lesson_id)
         
         # 이미 신청했는지 확인
@@ -255,11 +347,41 @@ def apply_lesson(lesson_id):
                 'message': '이미 신청한 수업입니다.'
             }), 400
         
+        # 신청 데이터 추출
+        selected_date = data.get('selected_date')  # 5. 수업 날짜
+        selected_time = data.get('selected_time')  # 선택한 시간대
+        
+        # 안되는 요일/시간대 체크
+        if lesson.unavailable:
+            unavailable_days = lesson.unavailable.get('days', [])
+            unavailable_times = lesson.unavailable.get('times', [])
+            
+            # 요일 체크 (예: '월', '화', '수' 등)
+            import datetime
+            if selected_date:
+                date_obj = datetime.datetime.strptime(selected_date, '%Y-%m-%d')
+                day_name = ['월', '화', '수', '목', '금', '토', '일'][date_obj.weekday()]
+                
+                if day_name in unavailable_days:
+                    return jsonify({
+                        'success': False,
+                        'message': f'{day_name}요일은 수업이 불가능합니다.'
+                    }), 400
+            
+            # 시간대 체크
+            if selected_time and selected_time in unavailable_times:
+                return jsonify({
+                    'success': False,
+                    'message': f'{selected_time} 시간대는 수업이 불가능합니다.'
+                }), 400
+        
         # 새로운 신청 생성
         application = Application(
             lesson_id=lesson_id,
             user_id=current_user.id,
-            status='pending'  # 대기중 상태
+            status='pending',  # 대기중 상태
+            selected_date=selected_date,
+            selected_time=selected_time
         )
         
         db.session.add(application)
@@ -276,3 +398,71 @@ def apply_lesson(lesson_id):
             'success': False,
             'message': str(e)
         }), 500
+
+# 역할별 수업 목록 조회 (청년은 어르신 수업만, 어르신은 청년 수업만)
+@lesson_bp.route('/lessons/filtered', methods=['GET'])
+@jwt_required()
+def get_filtered_lessons():
+    user_id = get_jwt_identity()
+    current_user = User.query.get(int(user_id))
+    
+    if not current_user:
+        return jsonify({'msg': 'User not found'}), 404
+    
+    # 사용자 역할에 따른 필터링
+    if current_user.role == 'young':  # 청년인 경우
+        # 어르신이 등록한 수업만 조회
+        lessons = Lesson.query.join(User).filter(
+            User.role == 'elder'
+        ).all()
+    elif current_user.role == 'elder':  # 어르신인 경우
+        # 청년이 등록한 수업만 조회
+        lessons = Lesson.query.join(User).filter(
+            User.role == 'young'
+        ).all()
+    else:
+        # 기본적으로 모든 수업 조회 (관리자 등)
+        lessons = Lesson.query.all()
+
+    lesson_list = []
+    for lesson in lessons:
+        # 강사 정보 가져오기
+        instructor = User.query.get(lesson.instructor_id)
+        
+        # 신청수 계산
+        application_count = Application.query.filter_by(lesson_id=lesson.id).count()
+        
+        # 찜수 계산
+        wish_count = len(lesson.wished_by)
+        
+        # 평균 별점 계산
+        reviews = Review.query.filter_by(lesson_id=lesson.id).all()
+        avg_rating = 0
+        review_count = 0
+        if reviews:
+            avg_rating = sum(review.rating for review in reviews) / len(reviews)
+            review_count = len(reviews)
+        
+        lesson_list.append({
+            'id': lesson.id,
+            'title': lesson.title,
+            'description': lesson.description,
+            'location': lesson.location,
+            'time': lesson.time,
+            'unavailable': lesson.unavailable,
+            'media_url': lesson.media_url,
+            'image_url': lesson.image_url,
+            'instructor_name': instructor.name if instructor else None,
+            'instructor_role': instructor.role if instructor else None,
+            'instructor_profile_image': instructor.profile_image if instructor else None,
+            'application_count': application_count,
+            'wish_count': wish_count,
+            'avg_rating': round(avg_rating, 1),
+            'review_count': review_count,
+            'created_at': lesson.created_at.strftime('%Y-%m-%d %H:%M') if lesson.created_at else None
+        })
+
+    return jsonify({
+        'success': True,
+        'data': lesson_list
+    }), 200

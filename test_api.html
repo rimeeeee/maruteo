@@ -81,6 +81,7 @@
         <button onclick="testLessonList()">수업 목록 조회</button>
         <button onclick="testWishLesson()">찜하기 테스트</button>
         <button onclick="testApplyLesson()">신청하기 테스트</button>
+        <button onclick="testApplyForm()">신청 폼 조회</button>
         <div id="result" class="result"></div>
     </div>
 
@@ -137,6 +138,41 @@
                         } catch (e) {
                             result += `  ${lesson.materials}\n`;
                         }
+                    }
+                    
+                    showResult(result);
+                } else {
+                    showResult(`❌ API 응답 실패: ${data.message}`, true);
+                }
+            } catch (error) {
+                showResult(`❌ 오류 발생: ${error.message}`, true);
+            }
+        }
+        
+        async function testApplyForm() {
+            try {
+                showResult('수업 신청 폼 조회 중...');
+                
+                const response = await fetch(`${BASE_URL}/lessons/1/apply-form`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const form = data.data;
+                    let result = `✅ 수업 신청 폼 조회 성공\n\n`;
+                    result += `📋 수업 정보:\n`;
+                    result += `  - 제목: ${form.lesson.title}\n`;
+                    result += `  - 이미지: ${form.lesson.image_url}\n`;
+                    result += `  - 별점: ${form.lesson.avg_rating} (${form.lesson.review_count}개 리뷰)\n`;
+                    result += `  - 찜수: ${form.lesson.wish_count}\n`;
+                    result += `  - 장소: ${form.lesson.location}\n`;
+                    result += `  - 인원수: ${form.lesson.application_count}명 신청\n\n`;
+                    
+                    result += `🚫 불가능한 요일/시간:\n`;
+                    if (form.lesson.unavailable) {
+                        result += `  - 불가능한 요일: ${form.lesson.unavailable.days.join(', ')}\n`;
+                        result += `  - 불가능한 시간: ${form.lesson.unavailable.times.join(', ')}\n`;
+                    } else {
+                        result += `  - 모든 요일/시간 가능\n`;
                     }
                     
                     showResult(result);
@@ -206,7 +242,11 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify({
+                        selected_date: '2024-01-15',
+                        selected_time: '오후 2시-4시'
+                    })
                 });
                 const data = await response.json();
                 

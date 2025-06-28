@@ -39,13 +39,15 @@ def create_sample_data():
                     location='서울시 강남구', time='오후 2시-4시', sub_category_id='korean-food',
                     instructor_id=1, image_url='https://example.com/kimchi.jpg',
                     video_url='https://example.com/kimchi-video.mp4',
-                    materials='["김치", "돼지고기", "두부", "양파", "대파", "고춧가루", "간장", "참기름"]')
+                    materials='["김치", "돼지고기", "두부", "양파", "대파", "고춧가루", "간장", "참기름"]',
+                    unavailable={'days': ['월', '화'], 'times': ['오전 9시-11시', '오후 6시-8시']})
     
     lesson2 = Lesson(title='파이썬 기초', description='파이썬 프로그래밍의 기초를 배워봅시다.',
                     location='서울시 강남구', time='오후 2시-4시', sub_category_id='programming',
                     instructor_id=2, image_url='https://example.com/python.jpg',
                     video_url='https://example.com/python-video.mp4',
-                    materials='["노트북", "파이썬 설치 파일", "개발 도구", "학습 자료"]')
+                    materials='["노트북", "파이썬 설치 파일", "개발 도구", "학습 자료"]',
+                    unavailable={'days': ['토', '일'], 'times': ['오전 8시-10시']})
     
     db.session.add_all([lesson1, lesson2])
     db.session.commit()
@@ -68,6 +70,28 @@ def init_database():
         return jsonify({
             'success': True,
             'message': '데이터베이스가 초기화되고 샘플 데이터가 추가되었습니다.'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+@db_bp.route('/db/recreate-tables', methods=['GET', 'POST'])
+def recreate_tables():
+    """테이블만 다시 생성 (파일 삭제 없이)"""
+    try:
+        # 모든 테이블 삭제 후 다시 생성
+        db.drop_all()
+        db.create_all()
+        
+        # 샘플 데이터 추가
+        create_sample_data()
+        
+        return jsonify({
+            'success': True,
+            'message': '테이블이 다시 생성되고 샘플 데이터가 추가되었습니다.'
         }), 200
         
     except Exception as e:

@@ -141,10 +141,58 @@ GET /api/lessons/by-subcategory/{sub_category_id}
 }
 ```
 
-#### 수업 신청
+#### 수업 신청 폼 조회
+**GET** `/api/lessons/{lesson_id}/apply-form`
+
+수업 신청 페이지에 필요한 정보를 조회합니다.
+
+**응답 예시:**
+```json
+{
+  "success": true,
+  "data": {
+    "lesson": {
+      "id": 1,
+      "title": "김치찌개 만들기",
+      "image_url": "https://example.com/kimchi.jpg",
+      "location": "서울시 강남구",
+      "time": "오후 2시-4시",
+      "description": "맛있는 김치찌개를 만드는 방법을 배워봅시다.",
+      "avg_rating": 4.5,
+      "review_count": 8,
+      "wish_count": 12,
+      "application_count": 5,
+      "unavailable": {
+        "days": ["월", "화"],
+        "times": ["오전 9시-11시", "오후 6시-8시"]
+      }
+    },
+    "instructor": {
+      "id": 1,
+      "name": "김요리사",
+      "profile_image": "https://example.com/profile.jpg",
+      "role": "instructor"
+    },
+    "category": {
+      "name": "요리",
+      "sub_category_name": "한식"
+    }
+  }
+}
+```
+
+#### 수업 신청 (개선된 버전)
 **POST** `/api/lessons/{lesson_id}/apply`
 
-수업에 신청합니다.
+수업에 신청합니다. 안되는 요일과 시간대를 체크합니다.
+
+**요청 본문:**
+```json
+{
+  "selected_date": "2024-01-15",
+  "selected_time": "오후 2시-4시"
+}
+```
 
 **응답 예시:**
 ```json
@@ -154,10 +202,64 @@ GET /api/lessons/by-subcategory/{sub_category_id}
 }
 ```
 
+**오류 응답 예시:**
+```json
+{
+  "success": false,
+  "message": "월요일은 수업이 불가능합니다."
+}
+```
+
+#### 역할별 수업 목록 조회
+**GET** `/api/lessons/filtered`
+
+사용자의 역할에 따라 필터링된 수업 목록을 조회합니다.
+- 청년(student)이 조회하면 어르신(instructor)이 등록한 수업만 반환
+- 어르신(instructor)이 조회하면 청년(student)이 등록한 수업만 반환
+
+**인증:** JWT 토큰 필요
+
+**응답 예시:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "title": "김치찌개 만들기",
+      "description": "맛있는 김치찌개를 만드는 방법을 배워봅시다...",
+      "location": "서울시 강남구",
+      "time": "오후 2시-4시",
+      "unavailable": ["월요일", "화요일"],
+      "media_url": "https://example.com/video.mp4",
+      "image_url": "https://example.com/image.jpg",
+      "instructor_name": "김요리",
+      "instructor_role": "instructor",
+      "instructor_profile_image": "https://example.com/profile.jpg",
+      "application_count": 5,
+      "wish_count": 12,
+      "avg_rating": 4.5,
+      "review_count": 8,
+      "created_at": "2024-01-15 14:30"
+    }
+  ]
+}
+```
+
+**설명:** 
+- 청년이 로그인하여 조회하면 어르신이 등록한 수업들만 반환됩니다.
+- 어르신이 로그인하여 조회하면 청년이 등록한 수업들만 반환됩니다.
+- 각 수업에는 강사의 역할(instructor_role)이 포함되어 필터링이 올바르게 되었는지 확인할 수 있습니다.
+
 ### 3. 메인 대시보드 (모든 데이터 한번에)
 ```
 GET /api/main/dashboard
 ```
+
+**설명:** 메인 페이지에 필요한 모든 데이터를 한번에 가져옵니다.
+**역할 필터링:** 사용자의 역할에 따라 수업과 강사 목록이 필터링됩니다.
+- 청년: 어르신이 등록한 수업과 어르신 강사만 표시
+- 어르신: 청년이 등록한 수업과 청년 강사만 표시
 
 **응답 예시:**
 ```json
@@ -221,12 +323,15 @@ GET /api/main/dashboard
 }
 ```
 
-### 4. 인기 수업 카로셀 (요리 3개, IT 3개)
+### 4. 인기 수업 목록
 ```
 GET /api/main/popular-lessons
 ```
 
 **설명:** 요리 분류에서 3개, IT 분류에서 3개 총 6개의 인기 수업을 신청수 기준으로 정렬하여 반환합니다.
+**역할 필터링:** 사용자의 역할에 따라 수업 목록이 필터링됩니다.
+- 청년: 어르신이 등록한 수업만 표시
+- 어르신: 청년이 등록한 수업만 표시
 
 **응답 예시:**
 ```json
@@ -275,7 +380,27 @@ GET /api/main/popular-lessons
 }
 ```
 
-### 5. 찜한 수업 목록
+### 5. 카테고리별 수업 조회
+```
+GET /api/lessons/by-category/{category_id}
+```
+
+**설명:** 특정 카테고리의 모든 수업을 조회합니다.
+**역할 필터링:** 사용자의 역할에 따라 수업 목록이 필터링됩니다.
+- 청년: 어르신이 등록한 수업만 표시
+- 어르신: 청년이 등록한 수업만 표시
+
+### 6. 소분류별 수업 조회
+```
+GET /api/lessons/by-subcategory/{sub_category_id}
+```
+
+**설명:** 특정 소분류의 모든 수업을 조회합니다.
+**역할 필터링:** 사용자의 역할에 따라 수업 목록이 필터링됩니다.
+- 청년: 어르신이 등록한 수업만 표시
+- 어르신: 청년이 등록한 수업만 표시
+
+### 7. 찜한 수업 목록
 ```
 GET /api/main/wished-lessons
 ```
@@ -283,14 +408,14 @@ GET /api/main/wished-lessons
 **설명:** 현재 로그인한 사용자가 찜한 수업들을 반환합니다.
 **인증:** 로그인 필요
 
-### 6. 인기 강사 목록
+### 8. 인기 강사 목록
 ```
 GET /api/main/popular-instructors
 ```
 
 **설명:** 신청수가 많은 순으로 정렬된 인기 강사들을 반환합니다.
 
-### 7. 리뷰 관련 API
+### 9. 리뷰 관련 API
 
 #### 수업 리뷰 목록 가져오기
 ```

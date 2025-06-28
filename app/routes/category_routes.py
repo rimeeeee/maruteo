@@ -7,6 +7,7 @@ from app.models.review import Review
 from app.models.application import Application
 from sqlalchemy import func, desc, asc
 from flask_login import current_user
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 category_bp = Blueprint('category', __name__)
 
@@ -78,6 +79,7 @@ def get_subcategories(category_id):
         }), 500
 
 @category_bp.route('/talent-exploration/<sub_category_id>/instructors', methods=['GET'])
+@jwt_required()
 def get_instructors_by_subcategory(sub_category_id):
     """특정 소분류의 강사 목록을 가져옴 (재능탐색 페이지)"""
     try:
@@ -86,21 +88,21 @@ def get_instructors_by_subcategory(sub_category_id):
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
         
-        # 현재 로그인한 사용자의 역할 확인
-        user_role = None
-        if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
-            user_role = current_user.role
+        # JWT 토큰에서 사용자 역할 확인
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        user_role = current_user.role if current_user else None
         
         # 해당 소분류의 수업들을 가져옴
         lessons_query = Lesson.query.filter_by(sub_category_id=sub_category_id)
         
         # 역할에 따른 필터링
-        if user_role == 'student':  # 청년이 로그인한 경우
+        if user_role == 'young':  # 청년이 로그인한 경우
             # 어르신이 만든 수업만 보여줌
-            lessons_query = lessons_query.join(User).filter(User.role == 'instructor')
-        elif user_role == 'instructor':  # 어르신이 로그인한 경우
+            lessons_query = lessons_query.join(User).filter(User.role == 'elder')
+        elif user_role == 'elder':  # 어르신이 로그인한 경우
             # 청년이 만든 수업만 보여줌
-            lessons_query = lessons_query.join(User).filter(User.role == 'student')
+            lessons_query = lessons_query.join(User).filter(User.role == 'young')
         
         lessons = lessons_query.all()
         
@@ -195,6 +197,7 @@ def get_instructors_by_subcategory(sub_category_id):
         }), 500
 
 @category_bp.route('/talent-exploration/<sub_category_id>/lessons', methods=['GET'])
+@jwt_required()
 def get_lessons_by_subcategory(sub_category_id):
     """특정 소분류의 수업 리스트를 가져옴 (재능탐색 페이지)"""
     try:
@@ -203,21 +206,21 @@ def get_lessons_by_subcategory(sub_category_id):
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 12))
         
-        # 현재 로그인한 사용자의 역할 확인
-        user_role = None
-        if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
-            user_role = current_user.role
+        # JWT 토큰에서 사용자 역할 확인
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        user_role = current_user.role if current_user else None
         
         # 해당 소분류의 수업들을 가져옴
         lessons_query = Lesson.query.filter_by(sub_category_id=sub_category_id)
         
         # 역할에 따른 필터링
-        if user_role == 'student':  # 청년이 로그인한 경우
+        if user_role == 'young':  # 청년이 로그인한 경우
             # 어르신이 만든 수업만 보여줌
-            lessons_query = lessons_query.join(User).filter(User.role == 'instructor')
-        elif user_role == 'instructor':  # 어르신이 로그인한 경우
+            lessons_query = lessons_query.join(User).filter(User.role == 'elder')
+        elif user_role == 'elder':  # 어르신이 로그인한 경우
             # 청년이 만든 수업만 보여줌
-            lessons_query = lessons_query.join(User).filter(User.role == 'student')
+            lessons_query = lessons_query.join(User).filter(User.role == 'young')
         
         lessons = lessons_query.all()
         
@@ -250,6 +253,7 @@ def get_lessons_by_subcategory(sub_category_id):
                 'image_url': lesson.image_url,  # 수업 사진 (클라우디너리)
                 'instructor_id': lesson.instructor_id,
                 'instructor_name': instructor.name if instructor else None,
+                'instructor_role': instructor.role if instructor else None,  # 강사 역할 추가
                 'instructor_profile_image': instructor.profile_image if instructor else None,
                 'application_count': app_count,
                 'wish_count': wish_count,  # 찜수

@@ -7,15 +7,71 @@ from app.models.category import Category, SubCategory
 from app.models.review import Review
 from sqlalchemy import func, desc
 from flask_login import login_required, current_user
+from functools import wraps
+import jwt
+from app.config import Config
 
 main_bp = Blueprint('main', __name__)
 
+def jwt_required(f):
+    """JWT 토큰 인증 데코레이터"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        token = None
+        
+        # Authorization 헤더에서 토큰 추출
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            try:
+                token = auth_header.split(" ")[1]  # "Bearer <token>"
+            except IndexError:
+                return jsonify({'message': '토큰이 없습니다!'}), 401
+        
+        if not token:
+            return jsonify({'message': '토큰이 필요합니다!'}), 401
+        
+        try:
+            # 토큰 디코딩
+            data = jwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
+            # flask_jwt_extended는 identity 키를 사용
+            user_id = data.get('sub') or data.get('identity') or data.get('user_id')
+            if not user_id:
+                return jsonify({'message': '유효하지 않은 토큰입니다!'}), 401
+                
+            current_user = User.query.get(user_id)
+            
+            if not current_user:
+                return jsonify({'message': '유효하지 않은 토큰입니다!'}), 401
+                
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': '토큰이 만료되었습니다!'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'message': '유효하지 않은 토큰입니다!'}), 401
+        
+        return f(current_user, *args, **kwargs)
+    
+    return decorated_function
+
 @main_bp.route('/main/popular-lessons', methods=['GET'])
-def get_popular_lessons():
+@jwt_required
+def get_popular_lessons(current_user):
     """인기 수업 카로셀 - 요리 3개, IT 3개 총 6개"""
     try:
+        # 현재 로그인한 사용자의 역할 확인
+        user_role = current_user.role
+        
         # 간단한 방법으로 모든 수업을 가져와서 분류별로 나누기
-        all_lessons = Lesson.query.all()
+        all_lessons_query = Lesson.query
+        
+        # 역할에 따른 필터링
+        if user_role == 'young':  # 청년이 로그인한 경우
+            # 어르신이 만든 수업만 보여줌
+            all_lessons_query = all_lessons_query.join(User).filter(User.role == 'elder')
+        elif user_role == 'elder':  # 어르신이 로그인한 경우
+            # 청년이 만든 수업만 보여줌
+            all_lessons_query = all_lessons_query.join(User).filter(User.role == 'young')
+        
+        all_lessons = all_lessons_query.all()
         
         # 요리 수업들 (sub_category_id가 요리 관련인 것들)
         cooking_lessons = []
@@ -161,11 +217,25 @@ def toggle_wish_lesson(lesson_id):
         }), 500
 
 @main_bp.route('/main/dashboard', methods=['GET'])
-def get_main_dashboard():
+@jwt_required
+def get_main_dashboard(current_user):
     """메인 대시보드 - 모든 데이터를 한번에 가져옴"""
     try:
+        # 현재 로그인한 사용자의 역할 확인
+        user_role = current_user.role
+        
         # 간단한 방법으로 모든 수업을 가져와서 분류별로 나누기
-        all_lessons = Lesson.query.all()
+        all_lessons_query = Lesson.query
+        
+        # 역할에 따른 필터링
+        if user_role == 'young':  # 청년이 로그인한 경우
+            # 어르신이 만든 수업만 보여줌
+            all_lessons_query = all_lessons_query.join(User).filter(User.role == 'elder')
+        elif user_role == 'elder':  # 어르신이 로그인한 경우
+            # 청년이 만든 수업만 보여줌
+            all_lessons_query = all_lessons_query.join(User).filter(User.role == 'young')
+        
+        all_lessons = all_lessons_query.all()
         
         # 요리 수업들
         cooking_lessons = []
@@ -198,8 +268,17 @@ def get_main_dashboard():
             lesson_dict['application_count'] = app_count
             popular_lessons_data.append(lesson_dict)
         
-        # 인기 강사 데이터
-        instructors = User.query.filter_by(role='instructor').all()
+        # 인기 강사 데이터 (역할에 따른 필터링)
+        if user_role == 'young':  # 청년이 로그인한 경우
+            # 어르신 강사들만 보여줌
+            instructors = User.query.filter_by(role='elder').all()
+        elif user_role == 'elder':  # 어르신이 로그인한 경우
+            # 청년 강사들만 보여줌
+            instructors = User.query.filter_by(role='young').all()
+        else:
+            # 기본적으로 모든 강사
+            instructors = User.query.filter(User.role.in_(['young', 'elder'])).all()
+        
         popular_instructors_data = []
         
         for instructor in instructors:
@@ -241,13 +320,28 @@ def get_main_dashboard():
 def get_lessons_by_category(category_id):
     """카테고리별 수업 조회"""
     try:
+        # 현재 로그인한 사용자의 역할 확인
+        user_role = None
+        if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+            user_role = current_user.role
+        
         # 해당 카테고리의 소분류들 가져오기
         sub_categories = SubCategory.query.filter_by(category_id=category_id).all()
         sub_category_ids = [sub.sub_category_id for sub in sub_categories]
         
         # 해당 소분류들의 수업들 가져오기
         if sub_category_ids:
-            lessons = Lesson.query.filter(Lesson.sub_category_id.in_(sub_category_ids)).all()
+            lessons_query = Lesson.query.filter(Lesson.sub_category_id.in_(sub_category_ids))
+            
+            # 역할에 따른 필터링
+            if user_role == 'young':  # 청년이 로그인한 경우
+                # 어르신이 만든 수업만 보여줌
+                lessons_query = lessons_query.join(User).filter(User.role == 'elder')
+            elif user_role == 'elder':  # 어르신이 로그인한 경우
+                # 청년이 만든 수업만 보여줌
+                lessons_query = lessons_query.join(User).filter(User.role == 'young')
+            
+            lessons = lessons_query.all()
         else:
             lessons = []
         
@@ -273,8 +367,23 @@ def get_lessons_by_category(category_id):
 def get_lessons_by_subcategory(sub_category_id):
     """소분류별 수업 조회"""
     try:
+        # 현재 로그인한 사용자의 역할 확인
+        user_role = None
+        if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+            user_role = current_user.role
+        
         # 해당 소분류의 수업들 가져오기
-        lessons = Lesson.query.filter_by(sub_category_id=sub_category_id).all()
+        lessons_query = Lesson.query.filter_by(sub_category_id=sub_category_id)
+        
+        # 역할에 따른 필터링
+        if user_role == 'young':  # 청년이 로그인한 경우
+            # 어르신이 만든 수업만 보여줌
+            lessons_query = lessons_query.join(User).filter(User.role == 'elder')
+        elif user_role == 'elder':  # 어르신이 로그인한 경우
+            # 청년이 만든 수업만 보여줌
+            lessons_query = lessons_query.join(User).filter(User.role == 'young')
+        
+        lessons = lessons_query.all()
         
         lessons_data = []
         for lesson in lessons:
