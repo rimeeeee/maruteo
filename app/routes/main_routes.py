@@ -293,7 +293,7 @@ def get_main_dashboard(current_user):
             instructors = User.query.filter_by(role='young').all()
         else:
             # 기본적으로 모든 강사
-            instructors = User.query.filter(User.role.in_(['young', 'elder'])).all()
+            instructors = User.query.filter(User.role.in_(['young', 'elder'])).all()  # type: ignore
         
         popular_instructors_data = []
         
@@ -347,19 +347,11 @@ def get_lessons_by_category(category_id):
         
         # 해당 소분류들의 수업들 가져오기
         if sub_category_ids:
-            lessons_query = Lesson.query.filter(Lesson.sub_category_id.in_(sub_category_ids))
-            
-            # 역할에 따른 필터링
-            if user_role == 'young':  # 청년이 로그인한 경우
-                # 어르신이 만든 수업만 보여줌
-                lessons_query = lessons_query.join(User).filter(User.role == 'elder')
-            elif user_role == 'elder':  # 어르신이 로그인한 경우
-                # 청년이 만든 수업만 보여줌
-                lessons_query = lessons_query.join(User).filter(User.role == 'young')
-            
-            lessons = lessons_query.all()
+            lessons_query = Lesson.query.filter(Lesson.sub_category_id.in_(sub_category_ids))  # type: ignore
         else:
-            lessons = []
+            lessons_query = Lesson.query.filter(Lesson.id == 0)  # 빈 결과 반환
+        
+        lessons = lessons_query.all()
         
         lessons_data = []
         for lesson in lessons:

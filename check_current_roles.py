@@ -28,11 +28,17 @@ with app.app_context():
     print(f"  - 청년이 조회할 수업 수: {len(young_lessons)}개")
     for lesson in young_lessons:
         instructor = User.query.get(lesson.instructor_id)
-        print(f"    * {lesson.title} (강사: {instructor.name}, role: {instructor.role})")
+        if instructor:
+            print(f"    * {lesson.title} (강사: {instructor.name}, role: {instructor.role})")
+        else:
+            print(f"    * {lesson.title} (강사: Unknown, role: Unknown)")
     
     # 어르신이 조회할 때 (청년 수업만 보여야 함)
     elder_lessons = Lesson.query.join(User).filter(User.role == 'young').all()
     print(f"  - 어르신이 조회할 수업 수: {len(elder_lessons)}개")
     for lesson in elder_lessons:
         instructor = User.query.get(lesson.instructor_id)
-        print(f"    * {lesson.title} (강사: {instructor.name}, role: {instructor.role})") 
+        if instructor:
+            print(f"    * {lesson.title} (강사: {instructor.name}, role: {instructor.role})")
+        else:
+            print(f"    * {lesson.title} (강사: Unknown, role: Unknown)") 
