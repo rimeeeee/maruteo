@@ -4,7 +4,6 @@ from flask_cors import CORS
 from app.database import db
 from flask_jwt_extended import JWTManager
 from flask_login import LoginManager
-from app.config import Config
 
 jwt = JWTManager()
 login_manager = LoginManager()

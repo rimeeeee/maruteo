@@ -5,8 +5,6 @@ from app.models.user import User, Talent
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token
 
-from flask_cors import cross_origin
-
 auth_bp = Blueprint('auth', __name__)  
 
 # 회원가입 API
