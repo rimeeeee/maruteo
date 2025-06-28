@@ -11,30 +11,10 @@ import json
 
 lesson_bp = Blueprint('lesson', __name__)
 
-#수업 등록
-# @lesson_bp.route('/lesson', methods=['POST'])
-# @jwt_required()
-# def create_lesson():
-#     current_user = get_jwt_identity()
-#     data = request.get_json()
-
-#     lesson = Lesson(
-#         title=data['title'],
-#         description=data['description'],
-#         location=data['location'],
-#         date=data['date'],
-#         instructor_id=int(get_jwt_identity())
-#     )
-
-#     db.session.add(lesson)
-#     db.session.commit()
-
-#     return jsonify(message='수업 등록 완료'), 201
-
 
 
 #수업등록
-@lesson_bp.route('/lesson', methods=['POST'])
+@lesson_bp.route('/lessons', methods=['POST'])
 @jwt_required()
 def create_lesson():
     data = request.get_json()
@@ -60,7 +40,7 @@ def create_lesson():
     return jsonify({'msg': 'Lesson created successfully'}), 201
 
 # 수업 목록 조회 (역할에 따른 필터링)
-@lesson_bp.route('/lesson', methods=['GET'])
+@lesson_bp.route('/lessons', methods=['GET'])
 @jwt_required()
 def get_lessons():
     user_id = get_jwt_identity()
@@ -105,7 +85,7 @@ def get_lessons():
 
 
 # 내 수업 삭제
-@lesson_bp.route('/lesson/<int:lesson_id>', methods=['DELETE'])
+@lesson_bp.route('/lessons/<int:lesson_id>', methods=['DELETE'])
 @jwt_required()
 def delete_lesson(lesson_id):
     user_id = get_jwt_identity()

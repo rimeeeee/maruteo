@@ -1,47 +1,52 @@
 import requests
 import json
 
-def test_railway_api():
-    """Railway 배포된 API 테스트"""
-    base_url = "https://maruteo-production-d290.up.railway.app"
+# 로컬 API 테스트
+BASE_URL = "http://127.0.0.1:5000/api"
+
+def test_login_and_lessons():
+    print("=== 로컬 API 테스트 ===")
     
-    # 1. 루트 경로 테스트
-    print("1. 루트 경로 테스트")
-    try:
-        response = requests.get(f"{base_url}/")
-        print(f"루트 응답: {response.status_code}")
-        if response.status_code == 200:
-            print("✅ 서버 정상 실행 중")
-            data = response.json()
-            print(f"메시지: {data.get('message')}")
-        else:
-            print(f"❌ 루트 접근 실패: {response.text}")
-    except Exception as e:
-        print(f"❌ 연결 오류: {e}")
+    # 1. 로그인
+    login_data = {
+        "email": "young@test.com",
+        "password": "password123"
+    }
     
-    # 2. API 경로 존재 여부 테스트 (인증 없이)
-    print("\n2. API 경로 존재 여부 테스트")
-    url = f"{base_url}/api/lessons?category=korean-food&instructor_role=elder&sort=latest&page=1&limit=4"
-    print(f"요청 URL: {url}")
+    print("1. 로그인 시도...")
+    login_response = requests.post(f"{BASE_URL}/login", json=login_data)
+    print(f"로그인 응답: {login_response.status_code}")
     
-    try:
-        response = requests.get(url)
-        print(f"API 응답: {response.status_code}")
+    if login_response.status_code == 200:
+        login_result = login_response.json()
+        print(f"로그인 성공: {login_result}")
         
-        if response.status_code == 401:
-            print("✅ API 경로는 존재하지만 인증이 필요함 (정상)")
-        elif response.status_code == 404:
-            print("❌ 404 에러 - API 경로를 찾을 수 없음")
-            print("가능한 원인:")
-            print("1. Railway 배포 시 최신 코드가 반영되지 않음")
-            print("2. lesson_routes.py의 /lessons 경로가 없음")
-            print("3. 블루프린트가 제대로 등록되지 않음")
-        else:
-            print(f"기타 응답: {response.status_code}")
-            print(f"응답: {response.text}")
+        # JWT 토큰 추출
+        access_token = login_result.get('accessToken')
+        if access_token:
+            print(f"토큰: {access_token[:50]}...")
             
-    except Exception as e:
-        print(f"❌ 오류 발생: {e}")
+            # 2. 수업 목록 조회 (JWT 토큰 사용)
+            headers = {
+                'Authorization': f'Bearer {access_token}',
+                'Content-Type': 'application/json'
+            }
+            
+            print("\n2. 수업 목록 조회 시도...")
+            lessons_response = requests.get(f"{BASE_URL}/lessons", headers=headers)
+            print(f"수업 목록 응답: {lessons_response.status_code}")
+            
+            if lessons_response.status_code == 200:
+                lessons = lessons_response.json()
+                print(f"수업 목록 성공: {len(lessons)}개 수업")
+                for lesson in lessons[:3]:  # 처음 3개만 출력
+                    print(f"  - {lesson.get('title')} (강사: {lesson.get('instructor_name')})")
+            else:
+                print(f"수업 목록 실패: {lessons_response.text}")
+        else:
+            print("토큰을 찾을 수 없습니다.")
+    else:
+        print(f"로그인 실패: {login_response.text}")
 
 if __name__ == "__main__":
-    test_railway_api() 
+    test_login_and_lessons() 
