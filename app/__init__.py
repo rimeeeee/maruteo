@@ -13,8 +13,12 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object('app.config.Config')
 
-    # CORS 허용 설정
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    # CORS 허용 설정 - Config에서 origins 가져오기
+    CORS(app, 
+         origins=app.config['CORS_ORIGINS'],
+         supports_credentials=True,
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
 
     db.init_app(app)
     jwt.init_app(app)

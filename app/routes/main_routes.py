@@ -21,12 +21,6 @@ def home():
         'message': '의성 해커톤 백엔드입니다~ 🚀',
         'description': '마루터 플랫폼 API 서버',
         'version': '1.0.0',
-        'endpoints': {
-            'auth': '/api/login, /api/register',
-            'lessons': '/api/lessons',
-            'main': '/api/main/dashboard',
-            'categories': '/api/categories'
-        }
     }), 200
 
 def jwt_required(f):
