@@ -51,6 +51,12 @@ class Lesson(db.Model):
     # 준비물 리스트 (JSON 형태로 저장)
     materials = db.Column(db.Text, nullable=True)  # JSON 문자열로 저장
     
+    # 최대 수강생 수
+    max_students = db.Column(db.Integer, nullable=True)
+    
+    # 수업 가격
+    price = db.Column(db.Integer, nullable=True)
+    
     # 생성일
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -64,7 +70,7 @@ class Lesson(db.Model):
     # 리뷰 관계
     reviews = db.relationship('Review', backref='lesson_ref', lazy=True)
     
-    def __init__(self, title=None, description=None, location=None, time=None, sub_category_id=None, instructor_id=None, image_url=None, video_url=None, materials=None, **kwargs):
+    def __init__(self, title=None, description=None, location=None, time=None, sub_category_id=None, instructor_id=None, image_url=None, video_url=None, materials=None, max_students=None, price=None, **kwargs):
         self.title = title
         self.description = description
         self.location = location
@@ -74,6 +80,8 @@ class Lesson(db.Model):
         self.image_url = image_url
         self.video_url = video_url
         self.materials = materials
+        self.max_students = max_students
+        self.price = price
         for key, value in kwargs.items():
             setattr(self, key, value)
     

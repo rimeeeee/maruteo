@@ -466,3 +466,123 @@ def get_filtered_lessons():
         'success': True,
         'data': lesson_list
     }), 200
+
+# 프론트엔드 요청에 맞는 수업 목록 조회 API
+@lesson_bp.route('/lessons', methods=['GET'])
+@jwt_required()
+def get_lessons_with_filters():
+    """쿼리 파라미터를 지원하는 수업 목록 조회 API"""
+    try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user:
+            return jsonify({'msg': 'User not found'}), 404
+        
+        # 쿼리 파라미터 가져오기
+        category = request.args.get('category')  # 예: korean-food
+        instructor_role = request.args.get('instructor_role')  # 예: elder, young
+        sort = request.args.get('sort', 'latest')  # 예: latest, popular, rating
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 10))
+        
+        # 기본 쿼리 시작 (User와 JOIN)
+        query = Lesson.query.join(User, Lesson.instructor_id == User.id)
+        
+        # 역할에 따른 필터링 (기본 필터)
+        if current_user.role == 'young':  # 청년인 경우
+            # 어르신이 등록한 수업만 조회
+            query = query.filter(User.role == 'elder')
+        elif current_user.role == 'elder':  # 어르신인 경우
+            # 청년이 등록한 수업만 조회
+            query = query.filter(User.role == 'young')
+        
+        # 추가 필터링
+        if category:
+            # 카테고리 필터링 (sub_category_id로)
+            query = query.filter(Lesson.sub_category_id == category)
+        
+        if instructor_role:
+            # 강사 역할 필터링 (이미 JOIN된 User 테이블 사용)
+            if instructor_role == 'elder':
+                query = query.filter(User.role == 'elder')
+            elif instructor_role == 'young':
+                query = query.filter(User.role == 'young')
+        
+        # 정렬
+        if sort == 'latest':
+            query = query.order_by(Lesson.created_at.desc())
+        elif sort == 'popular':
+            # 신청수 기준 정렬 (복잡하므로 간단하게)
+            query = query.order_by(Lesson.created_at.desc())
+        elif sort == 'rating':
+            # 별점 기준 정렬 (복잡하므로 간단하게)
+            query = query.order_by(Lesson.created_at.desc())
+        
+        # 페이지네이션
+        offset = (page - 1) * limit
+        lessons = query.offset(offset).limit(limit).all()
+        
+        # 전체 개수 계산 (페이지네이션용)
+        total_count = query.count()
+        
+        # 결과 데이터 구성
+        lesson_list = []
+        for lesson in lessons:
+            # 강사 정보 가져오기
+            instructor = User.query.get(lesson.instructor_id)
+            
+            # 신청수 계산
+            application_count = Application.query.filter_by(lesson_id=lesson.id).count()
+            
+            # 찜수 계산
+            wish_count = len(lesson.wished_by)
+            
+            # 평균 별점 계산
+            reviews = Review.query.filter_by(lesson_id=lesson.id).all()
+            avg_rating = 0
+            review_count = 0
+            if reviews:
+                avg_rating = sum(review.rating for review in reviews) / len(reviews)
+                review_count = len(reviews)
+            
+            lesson_data = {
+                'id': lesson.id,
+                'title': lesson.title,
+                'description': lesson.description,
+                'location': lesson.location,
+                'time': lesson.time,
+                'unavailable': lesson.unavailable,
+                'media_url': lesson.media_url,
+                'image_url': lesson.image_url,
+                'video_url': lesson.video_url,
+                'sub_category_id': lesson.sub_category_id,
+                'max_students': lesson.max_students,
+                'price': lesson.price,
+                'instructor_name': instructor.name if instructor else None,
+                'instructor_role': instructor.role if instructor else None,
+                'instructor_profile_image': instructor.profile_image if instructor else None,
+                'application_count': application_count,
+                'wish_count': wish_count,
+                'avg_rating': round(avg_rating, 1),
+                'review_count': review_count,
+                'created_at': lesson.created_at.strftime('%Y-%m-%d %H:%M') if lesson.created_at else None
+            }
+            lesson_list.append(lesson_data)
+        
+        return jsonify({
+            'success': True,
+            'data': lesson_list,
+            'pagination': {
+                'page': page,
+                'limit': limit,
+                'total': total_count,
+                'total_pages': (total_count + limit - 1) // limit
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
