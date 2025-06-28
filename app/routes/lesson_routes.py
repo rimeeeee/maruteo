@@ -14,7 +14,7 @@ lesson_bp = Blueprint('lesson', __name__)
 
 
 #수업등록
-@lesson_bp.route('/lessons', methods=['POST'])
+@lesson_bp.route('/lessons', methods=['POST'], strict_slashes=False)
 @jwt_required()
 def create_lesson():
     data = request.get_json()
@@ -40,7 +40,7 @@ def create_lesson():
     return jsonify({'msg': 'Lesson created successfully'}), 201
 
 # 수업 목록 조회 (역할에 따른 필터링)
-@lesson_bp.route('/lessons', methods=['GET'])
+@lesson_bp.route('/lessons', methods=['GET'], strict_slashes=False)
 @jwt_required()
 def get_lessons():
     user_id = get_jwt_identity()
@@ -85,7 +85,7 @@ def get_lessons():
 
 
 # 내 수업 삭제
-@lesson_bp.route('/lessons/<int:lesson_id>', methods=['DELETE'])
+@lesson_bp.route('/lessons/<int:lesson_id>', methods=['DELETE'], strict_slashes=False)
 @jwt_required()
 def delete_lesson(lesson_id):
     user_id = get_jwt_identity()
