@@ -64,6 +64,137 @@ def get_application_detail(application_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+@coordinator_bp.route('/api/coordinator/application-approve/<int:application_id>', methods=['POST'])
+def approve_application(application_id):
+    """신청 승인 및 일정 등록"""
+    try:
+        data = request.get_json()
+        
+        # 신청 정보 조회
+        application = Application.query.get(application_id)
+        if not application:
+            return jsonify({'success': False, 'error': '신청을 찾을 수 없습니다.'})
+        
+        # 관련 정보 조회
+        lesson = Lesson.query.get(application.lesson_id)
+        applicant = User.query.get(application.user_id)
+        instructor = User.query.get(lesson.instructor_id) if lesson else None
+        
+        if not lesson or not applicant or not instructor:
+            return jsonify({'success': False, 'error': '수업, 신청자 또는 강사 정보를 찾을 수 없습니다.'})
+        
+        # 신청 상태를 승인으로 변경
+        application.status = '승인됨'
+        
+        # 여기에 일정 등록 로직 추가 (필요시 별도 테이블 생성)
+        # 예: Schedule 테이블에 등록하거나, 기존 필드 업데이트
+        
+        db.session.commit()
+        
+        # 승인 완료 응답
+        result = {
+            'application_id': application.id,
+            'status': application.status,
+            'lesson_info': {
+                'title': lesson.title,
+                'date': application.selected_date,
+                'time': application.selected_time,
+                'location': lesson.location,
+                'instructor_name': instructor.name,
+                'applicant_name': applicant.name,
+                'max_students': lesson.max_students
+            },
+            'message': '신청이 승인되었습니다.'
+        }
+        
+        return jsonify({'success': True, 'approval_result': result})
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@coordinator_bp.route('/api/coordinator/application-reject/<int:application_id>', methods=['POST'])
+def reject_application(application_id):
+    """신청 반려"""
+    try:
+        data = request.get_json()
+        reject_reason = data.get('reject_reason', '')
+        
+        # 신청 정보 조회
+        application = Application.query.get(application_id)
+        if not application:
+            return jsonify({'success': False, 'error': '신청을 찾을 수 없습니다.'})
+        
+        # 관련 정보 조회
+        lesson = Lesson.query.get(application.lesson_id)
+        applicant = User.query.get(application.user_id)
+        instructor = User.query.get(lesson.instructor_id) if lesson else None
+        
+        if not lesson or not applicant or not instructor:
+            return jsonify({'success': False, 'error': '수업, 신청자 또는 강사 정보를 찾을 수 없습니다.'})
+        
+        # 신청 상태를 거절로 변경
+        application.status = '거절됨'
+        
+        # 반려 사유 저장 (필요시 별도 필드 추가)
+        # application.reject_reason = reject_reason
+        
+        db.session.commit()
+        
+        # 반려 완료 응답
+        result = {
+            'application_id': application.id,
+            'status': application.status,
+            'reject_reason': reject_reason,
+            'lesson_info': {
+                'title': lesson.title,
+                'date': application.selected_date,
+                'time': application.selected_time,
+                'location': lesson.location,
+                'instructor_name': instructor.name,
+                'instructor_profile_image': instructor.profile_image,
+                'max_students': lesson.max_students
+            },
+            'applicant_info': {
+                'name': applicant.name,
+                'phone': applicant.phone
+            },
+            'message': '신청이 반려되었습니다.'
+        }
+        
+        return jsonify({'success': True, 'reject_result': result})
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@coordinator_bp.route('/api/coordinator/instructor-profile/<int:instructor_id>')
+def get_instructor_profile(instructor_id):
+    """재능기부자(강사) 프로필 조회"""
+    try:
+        instructor = User.query.get(instructor_id)
+        if not instructor:
+            return jsonify({'success': False, 'error': '강사를 찾을 수 없습니다.'})
+        
+        # 강사 프로필 정보
+        profile = {
+            'id': instructor.id,
+            'name': instructor.name,
+            'email': instructor.email,
+            'phone': instructor.phone,
+            'profile_image': instructor.profile_image,
+            'bio': instructor.bio,
+            'address': instructor.address,
+            'gender': instructor.gender,
+            'role': instructor.role,
+            'created_at': instructor.created_at.strftime('%Y-%m-%d %H:%M') if instructor.created_at else None
+        }
+        
+        return jsonify({'success': True, 'instructor_profile': profile})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 @coordinator_bp.route('/api/coordinator/new-applications/<date>')
 def get_new_applications(date):
     """특정 날짜의 신규 신청 내역 조회"""
@@ -141,7 +272,7 @@ def get_upcoming_lessons(date):
 
 @coordinator_bp.route('/api/coordinator/application-status', methods=['POST'])
 def update_application_status():
-    """신청 상태 업데이트"""
+    """신청 상태 업데이트 (기존 API - 하위 호환성 유지)"""
     try:
         data = request.get_json()
         application_id = data.get('application_id')
