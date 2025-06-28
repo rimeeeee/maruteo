@@ -39,51 +39,6 @@ def create_lesson():
 
     return jsonify({'msg': 'Lesson created successfully'}), 201
 
-# 수업 목록 조회 (역할에 따른 필터링)
-@lesson_bp.route('/lessons', methods=['GET'], strict_slashes=False)
-@jwt_required()
-def get_lessons():
-    user_id = get_jwt_identity()
-    current_user = User.query.get(int(user_id))
-    
-    if not current_user:
-        return jsonify({'msg': 'User not found'}), 404
-    
-    # 사용자 역할에 따른 필터링
-    if current_user.role == 'young':  # 청년인 경우
-        # 어르신이 등록한 수업만 조회
-        lessons = Lesson.query.join(User).filter(
-            User.role == 'elder'
-        ).all()
-    elif current_user.role == 'elder':  # 어르신인 경우
-        # 청년이 등록한 수업만 조회
-        lessons = Lesson.query.join(User).filter(
-            User.role == 'young'
-        ).all()
-    else:
-        # 기본적으로 모든 수업 조회 (관리자 등)
-        lessons = Lesson.query.all()
-
-    lesson_list = []
-    for lesson in lessons:
-        # 강사 정보 가져오기
-        instructor = User.query.get(lesson.instructor_id)
-        
-        lesson_list.append({
-            'id': lesson.id,
-            'title': lesson.title,
-            'description': lesson.description,
-            'location': lesson.location,
-            'time': lesson.time,
-            'unavailable': lesson.unavailable,
-            'media_url': lesson.media_url,
-            'instructor_name': instructor.name if instructor else None,
-            'instructor_role': instructor.role if instructor else None
-        })
-
-    return jsonify(lesson_list), 200
-
-
 # 내 수업 삭제
 @lesson_bp.route('/lessons/<int:lesson_id>', methods=['DELETE'], strict_slashes=False)
 @jwt_required()
@@ -448,7 +403,7 @@ def get_filtered_lessons():
     }), 200
 
 # 프론트엔드 요청에 맞는 수업 목록 조회 API
-@lesson_bp.route('/lessons/', methods=['GET'])
+@lesson_bp.route('/lessons', methods=['GET'], strict_slashes=False)
 @jwt_required()
 def get_lessons_with_filters():
     """쿼리 파라미터를 지원하는 수업 목록 조회 API"""
