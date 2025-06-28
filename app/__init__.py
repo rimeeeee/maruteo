@@ -24,23 +24,23 @@ def create_app():
 
     # 라우터 등록 (지금은 auth만)
     from app.routes.auth_routes import auth_bp
-    app.register_blueprint(auth_bp, url_prefix='/api')
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
     
     #수업등록
     from app.routes.lesson_routes import lesson_bp
-    app.register_blueprint(lesson_bp, url_prefix='/api')
+    app.register_blueprint(lesson_bp, url_prefix='/api/lesson')
 
     #수업신청
     from app.routes.apply_routes import apply_bp
-    app.register_blueprint(apply_bp, url_prefix='/api')
+    app.register_blueprint(apply_bp, url_prefix='/api/apply')
 
     #프로필 등록/수정
     from app.routes.profile_routes import profile_bp
-    app.register_blueprint(profile_bp, url_prefix='/api')
+    app.register_blueprint(profile_bp, url_prefix='/api/profile')
 
     #출석/이행률 계산 API
     from app.routes.mypage_routes import mypage_bp
-    app.register_blueprint(mypage_bp, url_prefix='/api')
+    app.register_blueprint(mypage_bp, url_prefix='/api/mypage')
     
     #메인페이지
     from app.routes.main_routes import main_bp
@@ -48,15 +48,15 @@ def create_app():
     
     #카테고리
     from app.routes.category_routes import category_bp
-    app.register_blueprint(category_bp, url_prefix='/api')
+    app.register_blueprint(category_bp, url_prefix='/api/category')
     
     #리뷰
     from app.routes.review_routes import review_bp
-    app.register_blueprint(review_bp, url_prefix='/api')
+    app.register_blueprint(review_bp, url_prefix='/api/review')
     
     #데이터베이스 관련 블루프린트
     from app.routes.db_routes import db_bp
-    app.register_blueprint(db_bp, url_prefix='/api')
+    app.register_blueprint(db_bp, url_prefix='/api/db')
     
     return app
 
