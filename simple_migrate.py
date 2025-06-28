@@ -9,6 +9,7 @@ from app.models.user import User
 from app.models.lesson import Lesson
 from app.models.category import Category, SubCategory
 from app.models.review import Review
+from werkzeug.security import generate_password_hash
 
 def create_tables():
     """테이블 생성"""
@@ -50,31 +51,31 @@ def add_sample_users():
         # 강사 1
         instructor1 = User(
             username='chef_kim',
-            email='chef_kim@example.com',
-            password='password123',
+            email='chef@example.com',
+            password=generate_password_hash('password123'),
             name='김요리사',
             phone='010-1234-5678',
-            role='instructor'
+            role='elder'
         )
         
         # 강사 2
         instructor2 = User(
             username='dev_park',
-            email='dev_park@example.com',
-            password='password123',
+            email='dev@example.com',
+            password=generate_password_hash('password123'),
             name='박개발자',
             phone='010-2345-6789',
-            role='instructor'
+            role='young'
         )
         
         # 일반 사용자
         user1 = User(
             username='student_lee',
             email='student_lee@example.com',
-            password='password123',
+            password=generate_password_hash('password123'),
             name='이학생',
             phone='010-3456-7890',
-            role='student'
+            role='young'
         )
         
         db.session.add_all([instructor1, instructor2, user1])
@@ -94,7 +95,9 @@ def add_sample_lessons():
             time='오후 2시-4시',
             sub_category_id='korean-food',
             instructor_id=1,
-            image_url='https://example.com/kimchi.jpg'
+            image_url='https://example.com/kimchi.jpg',
+            max_students=10,
+            price=50000
         )
         
         lesson2 = Lesson(
@@ -104,7 +107,9 @@ def add_sample_lessons():
             time='오후 3시-5시',
             sub_category_id='western-food',
             instructor_id=1,
-            image_url='https://example.com/pasta.jpg'
+            image_url='https://example.com/pasta.jpg',
+            max_students=8,
+            price=40000
         )
         
         lesson3 = Lesson(
@@ -114,7 +119,9 @@ def add_sample_lessons():
             time='오후 1시-3시',
             sub_category_id='japanese-food',
             instructor_id=1,
-            image_url='https://example.com/sushi.jpg'
+            image_url='https://example.com/sushi.jpg',
+            max_students=12,
+            price=60000
         )
         
         # IT 수업들
@@ -125,7 +132,9 @@ def add_sample_lessons():
             time='오후 2시-4시',
             sub_category_id='programming',
             instructor_id=2,
-            image_url='https://example.com/python.jpg'
+            image_url='https://example.com/python.jpg',
+            max_students=15,
+            price=80000
         )
         
         lesson5 = Lesson(
@@ -135,7 +144,9 @@ def add_sample_lessons():
             time='오후 3시-5시',
             sub_category_id='smartphone-usage',
             instructor_id=2,
-            image_url='https://example.com/smartphone.jpg'
+            image_url='https://example.com/smartphone.jpg',
+            max_students=20,
+            price=100000
         )
         
         lesson6 = Lesson(
@@ -145,7 +156,9 @@ def add_sample_lessons():
             time='오후 1시-3시',
             sub_category_id='computer-usage',
             instructor_id=2,
-            image_url='https://example.com/computer.jpg'
+            image_url='https://example.com/computer.jpg',
+            max_students=18,
+            price=120000
         )
         
         db.session.add_all([lesson1, lesson2, lesson3, lesson4, lesson5, lesson6])

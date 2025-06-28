@@ -22,15 +22,24 @@ def test_popular_lessons():
 
 def test_popular_instructors():
     """인기 강사 API 테스트"""
-    print("\n🔍 인기 강사 API 테스트 중...")
-    try:
-        response = requests.get(f"{BASE_URL}/main/popular-instructors")
-        print(f"Status Code: {response.status_code}")
-        print(f"Response: {response.text}")
-        return response.status_code == 200
-    except Exception as e:
-        print(f"❌ 오류: {e}")
-        return False
+    print("\n=== 인기 강사 API 테스트 ===")
+    
+    response = requests.get(f"{BASE_URL}/main/popular-instructors")
+    print(f"응답 상태: {response.status_code}")
+    
+    if response.status_code == 200:
+        data = response.json()
+        if data.get('success'):
+            instructors = data.get('data', [])
+            print(f"✅ 인기 강사 수: {len(instructors)}명")
+            
+            for i, instructor in enumerate(instructors[:3], 1):
+                print(f"  {i}. {instructor.get('name')} (신청수: {instructor.get('total_applications')})")
+        else:
+            print(f"❌ API 응답 실패: {data.get('message')}")
+    else:
+        print(f"❌ HTTP 오류: {response.status_code}")
+        print(f"응답 내용: {response.text}")
 
 def test_main_dashboard():
     """메인 대시보드 API 테스트"""

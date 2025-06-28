@@ -27,9 +27,9 @@ def create_sample_data():
     
     # 사용자 추가
     instructor = User(username='chef_kim', email='chef@example.com', password='password123', 
-                     name='김요리사', phone='010-1234-5678', role='instructor')
+                     name='김요리사', phone='010-1234-5678', role='elder')
     student = User(username='dev_park', email='dev@example.com', password='password123', 
-                  name='박개발자', phone='010-2345-6789', role='student')
+                  name='박개발자', phone='010-2345-6789', role='young')
     
     db.session.add_all([instructor, student])
     db.session.commit()
@@ -52,31 +52,44 @@ def create_sample_data():
     db.session.add_all([lesson1, lesson2])
     db.session.commit()
 
-@db_bp.route('/db/init', methods=['GET', 'POST'])
-def init_database():
-    """데이터베이스 초기화"""
+@db_bp.route('/init-db', methods=['POST'])
+def init_db():
+    """데이터베이스 초기화 및 샘플 데이터 추가"""
     try:
-        # 데이터베이스 파일 삭제
-        db_path = 'instance/app.db'
-        if os.path.exists(db_path):
-            os.remove(db_path)
-        
-        # 테이블 생성
+        # 기존 데이터 삭제
+        db.drop_all()
         db.create_all()
         
-        # 샘플 데이터 추가
-        create_sample_data()
+        # 샘플 사용자 생성
+        instructor = User(username='chef_kim', email='chef@example.com', password='password123',
+                         name='김요리사', phone='010-1234-5678', role='elder')
+        student = User(username='dev_park', email='dev@example.com', password='password123',
+                      name='박개발자', phone='010-2345-6789', role='young')
         
-        return jsonify({
-            'success': True,
-            'message': '데이터베이스가 초기화되고 샘플 데이터가 추가되었습니다.'
-        }), 200
+        db.session.add_all([instructor, student])
+        db.session.commit()
+        
+        # 샘플 수업 생성
+        lesson1 = Lesson(
+            title='김치찌개 만들기', description='맛있는 김치찌개 만드는 방법을 배워보세요',
+            instructor_id=1, image_url='https://example.com/kimchi.jpg',
+            sub_category_id='korean-food', max_students=10, price=50000
+        )
+        
+        lesson2 = Lesson(
+            title='파이썬 기초', description='프로그래밍의 기초를 배워보세요',
+            instructor_id=2, image_url='https://example.com/python.jpg',
+            sub_category_id='programming', max_students=15, price=80000
+        )
+        
+        db.session.add_all([lesson1, lesson2])
+        db.session.commit()
+        
+        return jsonify({'message': '데이터베이스가 초기화되었습니다'}), 200
         
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': str(e)
-        }), 500
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @db_bp.route('/db/recreate-tables', methods=['GET', 'POST'])
 def recreate_tables():

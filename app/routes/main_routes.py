@@ -149,7 +149,7 @@ def get_popular_instructors():
     """인기 강사 - 신청수가 많은 순으로 정렬"""
     try:
         # 간단한 방법으로 강사들을 가져옴
-        instructors = User.query.filter_by(role='instructor').all()
+        instructors = User.query.filter_by(role='elder').all()
         
         instructors_data = []
         for instructor in instructors:

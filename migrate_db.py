@@ -4,6 +4,7 @@ from app.models.lesson import Lesson, wishlist
 from app.models.application import Application
 from app.models.category import Category, SubCategory
 from app.models.review import Review
+from werkzeug.security import generate_password_hash
 
 app = create_app()
 
@@ -125,10 +126,18 @@ with app.app_context():
     if add_sample_data:
         # 샘플 사용자 추가
         sample_instructors = [
-            {'name': '김요리', 'email': 'cooking@example.com', 'role': '청년', 'password': 'password123'},
-            {'name': '박IT', 'email': 'it@example.com', 'role': '청년', 'password': 'password123'},
-            {'name': '이요리', 'email': 'cooking2@example.com', 'role': '청년', 'password': 'password123'},
-            {'name': '최IT', 'email': 'it2@example.com', 'role': '청년', 'password': 'password123'},
+            {
+                'name': '김요리사',
+                'email': 'chef@example.com',
+                'role': 'elder',
+                'password': generate_password_hash('password123')
+            },
+            {
+                'name': '박개발자',
+                'email': 'dev@example.com',
+                'role': 'young',
+                'password': generate_password_hash('password123')
+            }
         ]
         
         for instructor_data in sample_instructors:
