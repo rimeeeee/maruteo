@@ -1,6 +1,7 @@
 # User테이블 정의
 from app.database import db
 from datetime import datetime
+from flask_login import UserMixin
 
 # 보유 재능
 user_have_talents = db.Table('user_have_talents',
@@ -14,7 +15,7 @@ user_want_talents = db.Table('user_want_talents',
     db.Column('talent_id', db.Integer, db.ForeignKey('talent.id'))
 )
 
-class User(db.Model):
+class User(db.Model, UserMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     role = db.Column(db.String(20))       # '청년', '어르신'
@@ -34,6 +35,15 @@ class User(db.Model):
     have_talents = db.relationship('Talent', secondary=user_have_talents, backref='owners')
     want_talents = db.relationship('Talent', secondary=user_want_talents, backref='learners')
     
+    def __init__(self, username=None, email=None, password=None, name=None, phone=None, role=None, **kwargs):
+        self.username = username
+        self.email = email
+        self.password = password
+        self.name = name
+        self.phone = phone
+        self.role = role
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 class Talent(db.Model):
     id = db.Column(db.Integer, primary_key=True)

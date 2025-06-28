@@ -59,7 +59,8 @@ def update_profile():
     for name in have_names:
         talent = Talent.query.filter_by(name=name).first()
         if not talent:
-            talent = Talent(name=name)
+            talent = Talent()
+            talent.name = name
             db.session.add(talent)
         user.have_talents.append(talent)
 
@@ -69,7 +70,8 @@ def update_profile():
     for name in want_names:
         talent = Talent.query.filter_by(name=name).first()
         if not talent:
-            talent = Talent(name=name)
+            talent = Talent()
+            talent.name = name
             db.session.add(talent)
         user.want_talents.append(talent)
 

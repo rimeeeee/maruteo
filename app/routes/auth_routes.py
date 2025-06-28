@@ -5,8 +5,6 @@ from app.models.user import User, Talent
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token
 
-from flask_cors import cross_origin
-
 auth_bp = Blueprint('auth', __name__)  
 
 # 회원가입 API
@@ -45,7 +43,8 @@ def register():
     for name in have_names:
         talent = Talent.query.filter_by(name=name).first()
         if not talent:
-            talent = Talent(name=name)
+            talent = Talent()
+            talent.name = name
             db.session.add(talent)
         user.have_talents.append(talent)
 
@@ -54,7 +53,8 @@ def register():
     for name in want_names:
         talent = Talent.query.filter_by(name=name).first()
         if not talent:
-            talent = Talent(name=name)
+            talent = Talent()
+            talent.name = name
             db.session.add(talent)
         user.want_talents.append(talent)
 
@@ -67,12 +67,7 @@ def register():
 
 # 로그인 API
 @auth_bp.route('/login', methods=['POST'])
-
 def login():
-
-    if request.method == 'OPTIONS':
-        return '', 204  # Preflight 응답
-    
     data = request.get_json()
     user = User.query.filter_by(email=data['email']).first()
 
@@ -85,7 +80,7 @@ def login():
         "id": str(user.id),
         "email": user.email,
         "name": user.name,
-        "userType": "elder" if user.role == "어르신" else "young",
+        "userType": "elder" if user.role == "elder" else "young",
         "phone": user.phone,
         "birthDate": user.birth
     }

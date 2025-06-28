@@ -18,10 +18,14 @@ class Config:
         SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     else:
         # 개발 환경에서는 SQLite 사용
-        SQLALCHEMY_DATABASE_URI = 'sqlite:///app.db'
+        SQLALCHEMY_DATABASE_URI = 'sqlite:///instance/app.db'
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'super-secret-key')
+    SECRET_KEY = os.getenv('SECRET_KEY', 'super-secret-key')
+    
+    # templates 디렉토리 설정
+    TEMPLATE_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates')
     
     # SSL 설정 (GCP Cloud SQL에서 필요한 경우)
     SQLALCHEMY_ENGINE_OPTIONS = {
